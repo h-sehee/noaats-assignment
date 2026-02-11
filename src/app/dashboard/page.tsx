@@ -27,8 +27,6 @@ export default function Dashboard() {
         <GoalForm onComplete={() => alert('목표가 저장되었습니다!')} />
         <GoalList />
       </div>
-      
-      {/* 여기에 나중에 저장된 목표 리스트와 API 매칭 결과를 보여줄 것입니다 */}
     </div>
   );
 }

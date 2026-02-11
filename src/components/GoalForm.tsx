@@ -11,7 +11,7 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
     title: '',
     targetAmount: '',
     monthlySaving: '',
-    term: '12', // 기본값 12개월
+    term: '12', 
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +27,10 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
         term: Number(formData.term),
         createdAt: serverTimestamp(),
       });
-      onComplete(); // 성공 시 리스트 갱신 등을 위한 콜백
+      
+      onComplete(); 
+      
+      // 폼 초기화
       setFormData({ title: '', targetAmount: '', monthlySaving: '', term: '12' });
     } catch (error) {
       console.error("Error adding goal: ", error);
@@ -35,15 +38,15 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border">
-      <h2 className="text-xl font-bold text-gray-800">새 저축 목표 설정</h2>
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+      <h2 className="text-xl font-bold text-gray-800 dark:text-white">새 저축 목표 설정</h2>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">목표 명칭</label>
         <input
           required
           type="text"
-          placeholder="예: 해외 여행"
-          className="mt-1 block w-full border rounded-md p-2"
+          placeholder="예: 유럽 여행"
+          className="mt-1 block w-full border rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         />
@@ -54,8 +57,8 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
           <input
             required
             type="number"
-            placeholder="5,000,000"
-            className="mt-1 block w-full border rounded-md p-2"
+            placeholder="5000000"
+            className="mt-1 block w-full border rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
             value={formData.targetAmount}
             onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
           />
@@ -65,8 +68,8 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
           <input
             required
             type="number"
-            placeholder="500,000"
-            className="mt-1 block w-full border rounded-md p-2"
+            placeholder="500000"
+            className="mt-1 block w-full border rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
             value={formData.monthlySaving}
             onChange={(e) => setFormData({ ...formData, monthlySaving: e.target.value })}
           />
@@ -75,7 +78,7 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">저축 기간 (개월)</label>
         <select
-          className="mt-1 block w-full border rounded-md p-2 dark:bg-gray-700"
+          className="mt-1 block w-full border rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
           value={formData.term}
           onChange={(e) => setFormData({ ...formData, term: e.target.value })}
         >
@@ -85,7 +88,7 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
           <option value="36">36개월</option>
         </select>
       </div>
-      <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700 transition">
+      <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition shadow-md">
         목표 추가하기
       </button>
     </form>
