@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import GoalForm from "@/components/GoalForm";
+import GoalList from "@/components/GoalList";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -24,6 +25,7 @@ export default function Dashboard() {
       
       <div className="max-w-md mx-auto">
         <GoalForm onComplete={() => alert('목표가 저장되었습니다!')} />
+        <GoalList />
       </div>
       
       {/* 여기에 나중에 저장된 목표 리스트와 API 매칭 결과를 보여줄 것입니다 */}
