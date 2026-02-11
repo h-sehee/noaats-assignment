@@ -9,6 +9,7 @@ import { getSavingProducts } from '@/services/fssAPI';
 export default function GoalList() {
   const { user } = useAuth();
   const [goals, setGoals] = useState<any[]>([]);
+  const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -34,6 +35,7 @@ export default function GoalList() {
   }, [user]);
 
   const fetchRecommendations = async (goalId: string, term: number) => {
+    setExpandedGoalId(goalId);
     setGoals(prev => prev.map(g => g.id === goalId ? { ...g, isLoading: true } : g));
     
     const results = await getSavingProducts(term);
@@ -57,32 +59,49 @@ export default function GoalList() {
               <p>월 저축액: {goal.monthlySaving.toLocaleString()}원</p>
               <p>기간: {goal.term}개월</p>
             </div>
-            {/* 여기에 곧 API 추천 상품 버튼이 들어갑니다! */}
-            <button 
+            {expandedGoalId !== goal.id && <button 
                 onClick={() => fetchRecommendations(goal.id, goal.term)}
                 disabled={goal.isLoading}
                 className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-semibold hover:bg-blue-100 transition"
               >
                 {goal.isLoading ? '찾는 중...' : '맞춤 상품 찾기'}
-              </button>
-              {/* 추천 상품 리스트 표시 섹션 */}
-            {goal.recommendations.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
+              </button>}
+            {expandedGoalId === goal.id && goal.recommendations.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div 
+                className="flex justify-between items-center cursor-pointer group"
+                onClick={() => setExpandedGoalId(expandedGoalId === goal.id ? null : goal.id)}
+              >
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">추천 상품 TOP 3</p>
-                {goal.recommendations.map((prod: any, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{prod.bankName}</p>
-                      <p className="text-sm font-medium dark:text-gray-200">{prod.productName}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">최대 금리</p>
-                      <p className="text-lg font-bold text-orange-500">{prod.maxInterestRate}%</p>
-                    </div>
-                  </div>
-                ))}
+                
+                {/* 얇은 화살표 아이콘 (상태에 따라 회전) */}
+                <svg 
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${expandedGoalId === goal.id ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            )}
+              {expandedGoalId === goal.id && (
+                <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {goal.recommendations.map((prod: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{prod.bankName}</p>
+                        <p className="text-sm font-medium dark:text-gray-200">{prod.productName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">최대 금리</p>
+                        <p className="text-lg font-bold text-orange-500">{prod.maxInterestRate}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           </div>
         ))
       )}
