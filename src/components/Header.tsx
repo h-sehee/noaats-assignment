@@ -49,7 +49,7 @@ export default function Header() {
         <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
           Save<span className="text-blue-600">Mate</span>
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+        <p className="text-sm  font-medium">
           스마트한 금융 목표 관리
         </p>
       </div>
