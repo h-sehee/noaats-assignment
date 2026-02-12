@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/components/AuthProvider";
 import { getSavingProducts } from "@/services/fssAPI";
 import GoalChart from "./GoalChart";
-import { ExternalLink } from "lucide-react";
+import { AlertCircle, ExternalLink, Sparkles } from "lucide-react";
 
 export default function GoalList() {
   const { user } = useAuth();
@@ -50,7 +50,7 @@ export default function GoalList() {
       const goalData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-        recommendations: [], // 초기엔 빈 배열
+        recommendations: (doc.data() as any).recommendations || [],
         isLoading: false,
       }));
       setGoals(goalData);
@@ -86,16 +86,120 @@ export default function GoalList() {
       prev.map((g) => (g.id === goalId ? { ...g, isLoading: true } : g)),
     );
 
+    // 유저의 목표(기간, 금액)에 맞는 상품만 골라내서 정렬하는 함수
+    const filterAndSortSimple = (
+      baseList: any[],
+      optionList: any[],
+      goal: any,
+    ) => {
+      // 1. [병합] 기본 정보 + 금리 옵션 합치기 (기간 맞는 것만!)
+      const mergedProducts = baseList
+        .map((base) => {
+          // 유저가 선택한 기간(예: 12개월)과 일치하는 옵션을 찾습니다.
+          const matchOption = optionList.find(
+            (opt) =>
+              opt.fin_co_no === base.fin_co_no &&
+              opt.fin_prdt_cd === base.fin_prdt_cd &&
+              opt.save_trm === goal.term.toString(),
+          );
+          // 옵션이 없으면(해당 기간 상품 아님) null 반환
+          return matchOption ? { ...base, ...matchOption } : null;
+        })
+        .filter((p) => p !== null); // null 제거
+
+      // 2. [필터] 숫자 한도(max_limit)만 체크
+      const validProducts = mergedProducts.filter((p) => {
+        // API에 'max_limit' 숫자가 명시되어 있고, 그게 내 저축액보다 작으면 제외
+        // (null인 경우는 한도 없음으로 간주하고 통과시킴)
+        if (p.max_limit !== null && p.max_limit < goal.monthlySaving) {
+          return false;
+        }
+        return true;
+      });
+
+      // 3. [정렬] 가중치 기반 스코어링 (Weighted Scoring)
+      // 전략: 최고 금리(Potential) 60% + 기본 금리(Stability) 40% 반영
+      const sortedProducts = validProducts.sort((a, b) => {
+        // null 방지 (API 데이터가 없을 경우 0 처리)
+        const baseA = a.intr_rate || 0;
+        const maxA = a.intr_rate2 || baseA; // 최고 금리 없으면 기본 금리로
+
+        const baseB = b.intr_rate || 0;
+        const maxB = b.intr_rate2 || baseB;
+
+        // ⚖️ 가중치 점수 계산 (Weight Calculation)
+        // 기본 금리가 탄탄한 상품이 상위권에 오르도록 유도합니다.
+        const scoreA = baseA * 0.4 + maxA * 0.6;
+        const scoreB = baseB * 0.4 + maxB * 0.6;
+
+        // 점수가 높은 순서대로 내림차순 정렬
+        return scoreB - scoreA;
+      });
+
+      // 4. [추출] 상위 15개만 뽑아서 데이터 다이어트 (AI에게 보낼 것들)
+      return sortedProducts.slice(0, 15).map((p) => ({
+        bankName: p.kor_co_nm,
+        productName: p.fin_prdt_nm,
+        baseRate: p.intr_rate, // 기본금리
+        maxRate: p.intr_rate2, // 최고 우대금리
+        condition: p.spcl_cnd, // 우대조건 (AI 분석용)
+        joinWay: p.join_way, // 가입방법
+        note: p.etc_note, // 기타 유의사항 (혹시 모르니 AI에게 넘겨줌)
+      }));
+    };
+
     try {
-      const results = await getSavingProducts(term);
+      // 1. 금감원 데이터 가져오기
+      const rawProducts = await getSavingProducts(term);
+
+      if (!user) return;
+
+      // 2. Firestore에서 방금 설정한 확장된 유저 정보 가져오기
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const fullUserData = userDoc.data();
+      const currentGoal = goals.find((g) => g.id === goalId);
+
+      const aiReadyData = filterAndSortSimple(
+        rawProducts.result.baseList,
+        rawProducts.result.optionList,
+        { term: term, monthlySaving: currentGoal.monthlySaving },
+      );
+
+      if (aiReadyData.length === 0) {
+        alert("조건에 맞는 상품이 없습니다.");
+        return;
+      }
+
+      console.log("AI에게 보낼 데이터:", aiReadyData);
+
+      // 3. Gemini API 호출
+      const aiResponse = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userData: {
+            ...fullUserData, // 나이, 직업, 카드사용액, 첫거래여부 등 포함
+            targetAmount: goals.find((g) => g.id === goalId)?.targetAmount,
+            monthlySaving: goals.find((g) => g.id === goalId)?.monthlySaving,
+            term: term,
+          },
+          productList: aiReadyData,
+        }),
+      });
+
+      const finalData = await aiResponse.json();
+
       setGoals((prev) =>
         prev.map((g) =>
           g.id === goalId
-            ? { ...g, recommendations: results, isLoading: false }
+            ? {
+                ...g,
+                recommendations: finalData.recommendations,
+                isLoading: false,
+              }
             : g,
         ),
       );
-      // ✅ 데이터 로딩 완료 시, 첫 번째 상품(인덱스 0)의 차트를 기본으로 엽니다.
       setSelectedChartId(`${goalId}-0`);
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -319,7 +423,7 @@ export default function GoalList() {
                     className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-xl text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition flex items-center gap-2"
                   >
                     {goal.isLoading ? (
-                      <span className="animate-pulse">검색 중...</span>
+                      <span className="animate-pulse">분석 중...</span>
                     ) : (
                       <>
                         <svg
@@ -413,7 +517,10 @@ export default function GoalList() {
                           );
                         }
 
+                        // ... (기본 fetch 로직은 이전과 동일하며, 렌더링 부분 위주로 수정)
+
                         return displayList.map((prod: any, idx: number) => {
+                          if (!prod) return null;
                           const isMainBank =
                             userMainBank &&
                             prod.bankName.includes(userMainBank);
@@ -421,90 +528,116 @@ export default function GoalList() {
                           const isChartOpen =
                             selectedChartId === uniqueChartKey;
 
-                          const handleLinkClick = (e: React.MouseEvent) => {
-                            e.stopPropagation(); // 부모의 클릭 이벤트(차트 열기) 방지
-                            const query = encodeURIComponent(
-                              `${prod.bankName} ${prod.productName}`,
-                            );
-                            window.open(
-                              `https://google.com/search?q=${query}`,
-                              "_blank",
-                            );
-                          };
-
                           return (
                             <div
-                              key={uniqueChartKey} // 고유 키값 보장
-                              onClick={() =>
-                                setSelectedChartId(
-                                  isChartOpen ? null : uniqueChartKey,
-                                )
-                              }
-                              className={`rounded-xl overflow-hidden transition-all border
-                  ${
-                    isMainBank
-                      ? "bg-blue-50/50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800 shadow-sm"
-                      : "bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700 hover:border-gray-300"
-                  }
-                `}
+                              key={uniqueChartKey}
+                              className={`rounded-2xl border mb-4 overflow-hidden transition-all ${isChartOpen ? "ring-2 ring-blue-500" : ""}`}
                             >
-                              <div className="flex justify-between items-center p-4">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    {/* 배지 표시 */}
-                                    {isMainBank && (
-                                      <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                        🏆 주거래 우대
-                                      </span>
-                                    )}
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {/* 카드 헤더 */}
+                              <div
+                                className="p-5 cursor-pointer bg-white dark:bg-gray-800"
+                                onClick={() =>
+                                  setSelectedChartId(
+                                    isChartOpen ? null : uniqueChartKey,
+                                  )
+                                }
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                      {isMainBank && (
+                                        <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-bold">
+                                          🏆 주거래 우대
+                                        </span>
+                                      )}
+                                      {/* AI가 생성한 태그들 */}
+                                      {prod.tags?.map((tag: string) => (
+                                        <span
+                                          key={tag}
+                                          className="text-[10px] px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md font-bold"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                                      {prod.productName}
+                                    </h4>
+                                    <p className="text-sm text-gray-500">
                                       {prod.bankName}
                                     </p>
                                   </div>
-                                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                    {prod.productName}
-                                  </p>
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-400">
+                                      AI 예상 금리
+                                    </p>
+                                    <p className="text-2xl font-black text-blue-600">
+                                      {prod.maxInterestRate}%
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-400 mb-1">
-                                    최대 금리
-                                  </p>
-                                  <p
-                                    className={`text-xl font-black ${isMainBank ? "text-blue-600 dark:text-blue-400" : "text-orange-500"}`}
-                                  >
-                                    {prod.maxInterestRate}%
-                                  </p>
-                                </div>
+
+                                {/* 한도 경고 (있을 경우만) */}
+                                {prod.limitWarning && (
+                                  <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs rounded-lg flex items-center gap-2">
+                                    <AlertCircle size={14} />{" "}
+                                    {prod.limitWarning}
+                                  </div>
+                                )}
                               </div>
 
-                              {/* 차트 및 가입 버튼 영역 */}
+                              {/* 펼쳐지는 상세 영역 */}
                               {isChartOpen && (
-                                <div className="px-4 pb-4 pt-2 border-t border-gray-200 dark:border-gray-600/50 animate-in slide-in-from-top-1 duration-200">
+                                <div className="p-5 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                                   <GoalChart
                                     targetAmount={goal.targetAmount}
                                     monthlySaving={goal.monthlySaving}
                                     term={goal.term}
                                     interestRate={prod.maxInterestRate}
                                   />
-                                  <button
-                                    onClick={handleLinkClick}
-                                    className="w-full mt-4 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2"
-                                  >
-                                    {/* 구글 아이콘 SVG */}
-                                    <svg
-                                      className="w-4 h-4"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
+
+                                  <div className="mt-6 space-y-4">
+                                    <div>
+                                      <h5 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                                        <Sparkles
+                                          size={16}
+                                          className="text-blue-500"
+                                        />{" "}
+                                        AI의 추천 분석
+                                      </h5>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+                                        {prod.reason}
+                                      </p>
+                                    </div>
+
+                                    {prod.managementTip && (
+                                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                                        <h5 className="text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">
+                                          💡 가입 전 꿀팁
+                                        </h5>
+                                        <p className="text-sm text-blue-600 dark:text-blue-400">
+                                          {prod.managementTip}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const query = encodeURIComponent(
+                                          `${prod.bankName} ${prod.productName}`,
+                                        );
+                                        window.open(
+                                          `https://www.google.com/search?q=${query}`,
+                                          "_blank",
+                                        );
+                                      }}
+                                      className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition"
                                     >
-                                      <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
-                                    </svg>
-                                    <span>상품 확인하기</span>
-                                    <ExternalLink size={14} />
-                                  </button>
-                                  <p className="text-[10px] text-gray-400 text-center mt-2">
-                                    정확한 가입 정보 확인을 위해 Google 검색
-                                    결과로 이동합니다.
-                                  </p>
+                                      상품 정보 확인하러 가기{" "}
+                                      <ExternalLink size={16} />
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </div>

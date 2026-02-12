@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const term = searchParams.get('term');
-  const apiKey = process.env.NEXT_PUBLIC_FSS_API_KEY;
+  const apiKey = process.env.FSS_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json({ result: { err_msg: "API Key missing" } }, { status: 500 });

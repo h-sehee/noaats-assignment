@@ -115,7 +115,7 @@ export default function Header() {
                         className="w-full flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition text-left"
                     >
                         <User size={18} className="text-gray-400" />
-                        <span>내 정보 수정</span>
+                        <span>내 정보</span>
                     </button>
                   </div>
 
