@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/components/AuthProvider";
 import { getSavingProducts } from "@/services/fssAPI";
 import GoalChart from "./GoalChart";
+import { ExternalLink } from "lucide-react";
 
 export default function GoalList() {
   const { user } = useAuth();
@@ -420,6 +421,17 @@ export default function GoalList() {
                           const isChartOpen =
                             selectedChartId === uniqueChartKey;
 
+                          const handleLinkClick = (e: React.MouseEvent) => {
+                            e.stopPropagation(); // 부모의 클릭 이벤트(차트 열기) 방지
+                            const query = encodeURIComponent(
+                              `${prod.bankName} ${prod.productName}`,
+                            );
+                            window.open(
+                              `https://google.com/search?q=${query}`,
+                              "_blank",
+                            );
+                          };
+
                           return (
                             <div
                               key={uniqueChartKey} // 고유 키값 보장
@@ -465,7 +477,7 @@ export default function GoalList() {
                                 </div>
                               </div>
 
-                              {/* 리스트의 첫 번째 항목(가장 우선순위 높은 것)에만 시뮬레이션 차트 표시 */}
+                              {/* 차트 및 가입 버튼 영역 */}
                               {isChartOpen && (
                                 <div className="px-4 pb-4 pt-2 border-t border-gray-200 dark:border-gray-600/50 animate-in slide-in-from-top-1 duration-200">
                                   <GoalChart
@@ -474,6 +486,25 @@ export default function GoalList() {
                                     term={goal.term}
                                     interestRate={prod.maxInterestRate}
                                   />
+                                  <button
+                                    onClick={handleLinkClick}
+                                    className="w-full mt-4 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2"
+                                  >
+                                    {/* 구글 아이콘 SVG */}
+                                    <svg
+                                      className="w-4 h-4"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
+                                    </svg>
+                                    <span>상품 확인하기</span>
+                                    <ExternalLink size={14} />
+                                  </button>
+                                  <p className="text-[10px] text-gray-400 text-center mt-2">
+                                    정확한 가입 정보 확인을 위해 Google 검색
+                                    결과로 이동합니다.
+                                  </p>
                                 </div>
                               )}
                             </div>
