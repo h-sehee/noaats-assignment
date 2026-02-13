@@ -219,7 +219,14 @@ export default function GoalCard({
             </div>
 
             {/* 상품 찾기 버튼 */}
-            <div className="flex flex-wrap justify-between items-start gap-4 mb-6 bg-gray-50/50 dark:bg-gray-900/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 w-full md:w-[360px] lg:w-[360px]">
+            <div
+              className="
+            flex flex-wrap
+            justify-between items-start gap-4 mb-6 p-4
+            bg-gray-50/50 dark:bg-gray-900/30
+            rounded-2xl border border-gray-100 dark:border-gray-800
+            w-full md:w-[360px] lg:w-[360px]"
+            >
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-blue-500" />
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300 tracking-tight">
@@ -240,14 +247,15 @@ export default function GoalCard({
                         onToggleMainBankFilter(goal.id, e.target.checked)
                       }
                       disabled={
-                        !!(
-                          expandedGoalId &&
-                          goal.recommendations?.length > 0
-                        )
+                        !!(expandedGoalId && goal.recommendations?.length > 0)
                       }
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 group-hover/filter:text-blue-500 transition-colors">
+                    <span
+                      className="
+                    text-xs font-semibold text-gray-500 dark:text-gray-400
+                    group-hover/filter:text-blue-500 transition-colors"
+                    >
                       {userMainBank}만 보기
                     </span>
                   </label>
@@ -334,19 +342,18 @@ export default function GoalCard({
                     const allProducts = goal.recommendations;
                     const myBankProducts = userMainBank
                       ? allProducts.filter((p: any) =>
-                          p.bankName.includes(userMainBank)
+                          p.bankName.includes(userMainBank),
                         )
                       : [];
 
                     const topRateProducts = allProducts
                       .filter(
                         (p: any) =>
-                          !userMainBank ||
-                          !p.bankName.includes(userMainBank)
+                          !userMainBank || !p.bankName.includes(userMainBank),
                       )
                       .sort(
                         (a: any, b: any) =>
-                          b.maxInterestRate - a.maxInterestRate
+                          b.maxInterestRate - a.maxInterestRate,
                       )
                       .slice(0, 3);
 
@@ -366,8 +373,7 @@ export default function GoalCard({
                     return displayList.map((prod: any, idx: number) => {
                       if (!prod) return null;
                       const isMainBank =
-                        userMainBank &&
-                        prod.bankName.includes(userMainBank);
+                        userMainBank && prod.bankName.includes(userMainBank);
                       const uniqueChartKey = `${goal.id}-${idx}`;
                       const isChartOpen = selectedChartId === uniqueChartKey;
 
@@ -383,7 +389,7 @@ export default function GoalCard({
                             className="p-5 cursor-pointer bg-white dark:bg-gray-800"
                             onClick={() =>
                               setSelectedChartId(
-                                isChartOpen ? null : uniqueChartKey
+                                isChartOpen ? null : uniqueChartKey,
                               )
                             }
                           >
@@ -407,7 +413,11 @@ export default function GoalCard({
                                   {prod.tags?.map((tag: string) => (
                                     <span
                                       key={tag}
-                                      className="text-[10px] px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md font-bold"
+                                      className="
+                                      text-[10px] px-2 py-0.5
+                                      bg-gray-100 dark:bg-gray-700
+                                      text-gray-600 dark:text-gray-300
+                                      rounded-md font-bold"
                                     >
                                       {tag}
                                     </span>
@@ -430,15 +440,32 @@ export default function GoalCard({
                                   }`}
                                 >
                                   <span
-                                    className={`text-2xl font-black text-blue-600 dark:text-blue-400 decoration-dotted underline-offset-4 ${
-                                      isChartOpen ? "group-hover:underline" : ""
-                                    } transition-all`}
+                                    className={`
+                                        text-2xl font-black text-blue-600 dark:text-blue-400
+                                        decoration-dotted underline-offset-4 ${
+                                          isChartOpen
+                                            ? "group-hover:underline"
+                                            : ""
+                                        } transition-all`}
                                   >
                                     {prod.maxInterestRate}%
                                   </span>
 
                                   {isChartOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-52 p-4 bg-gray-900/95 text-white text-xs rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[99] backdrop-blur-sm border border-gray-700 pointer-events-none transform translate-y-1 group-hover:translate-y-0">
+                                    <div
+                                      className="
+                                    absolute
+                                    right-0 top-full mt-2 w-52 p-4
+                                    bg-gray-900/95 text-white text-xs
+                                    rounded-xl shadow-2xl opacity-0 invisible
+                                    group-hover:opacity-100 group-hover:visible
+                                    transition-all duration-200
+                                    z-[99] backdrop-blur-sm
+                                    border border-gray-700
+                                    pointer-events-none
+                                    transform translate-y-1
+                                    group-hover:translate-y-0"
+                                    >
                                       <div className="font-bold text-gray-300 mb-2 border-b border-gray-700 pb-1">
                                         금리 구성 상세
                                       </div>
@@ -470,12 +497,10 @@ export default function GoalCard({
                                                     • {cond.label}
                                                   </span>
                                                   <span className="font-mono text-blue-300">
-                                                    +
-                                                    {cond.rate.toFixed(1)}
-                                                    %
+                                                    +{cond.rate.toFixed(1)}%
                                                   </span>
                                                 </div>
-                                              )
+                                              ),
                                             )}
                                           </div>
                                         ) : (
@@ -500,7 +525,13 @@ export default function GoalCard({
                                         </div>
                                       </div>
 
-                                      <div className="absolute -top-1.5 right-6 w-3 h-3 bg-gray-900 rotate-45 border-l border-t border-gray-700"></div>
+                                      <div
+                                        className="
+                                      absolute
+                                      -top-1.5 right-6 w-3 h-3
+                                      bg-gray-900 rotate-45
+                                      border-l border-t border-gray-700"
+                                      ></div>
                                     </div>
                                   )}
                                 </div>
@@ -508,9 +539,14 @@ export default function GoalCard({
                             </div>
 
                             {prod.limitWarning && (
-                              <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs rounded-lg flex items-center gap-2">
-                                <AlertCircle size={14} />{" "}
-                                {prod.limitWarning}
+                              <div
+                                className="
+                              mt-3 p-2
+                              bg-amber-50 dark:bg-amber-900/20
+                              text-amber-700 dark:text-amber-400 text-xs
+                              rounded-lg flex items-center gap-2"
+                              >
+                                <AlertCircle size={14} /> {prod.limitWarning}
                               </div>
                             )}
                           </div>
@@ -535,13 +571,23 @@ export default function GoalCard({
                                     />{" "}
                                     AI의 추천 분석
                                   </h5>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+                                  <p
+                                    className="
+                                  text-sm text-gray-600 dark:text-gray-400
+                                  leading-relaxed
+                                  bg-white dark:bg-gray-800
+                                  p-4 rounded-xl shadow-sm"
+                                  >
                                     {prod.reason}
                                   </p>
                                 </div>
 
                                 {prod.managementTip && (
-                                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                                  <div
+                                    className="p-4
+                                  bg-blue-50 dark:bg-blue-900/20
+                                  rounded-xl border border-blue-100 dark:border-blue-800"
+                                  >
                                     <h5 className="text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">
                                       💡 가입 전 꿀팁
                                     </h5>
@@ -555,14 +601,19 @@ export default function GoalCard({
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     const query = encodeURIComponent(
-                                      `${prod.bankName} ${prod.productName}`
+                                      `${prod.bankName} ${prod.productName}`,
                                     );
                                     window.open(
                                       `https://www.google.com/search?q=${query}`,
-                                      "_blank"
+                                      "_blank",
                                     );
                                   }}
-                                  className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition"
+                                  className="
+                                  w-full py-3
+                                  bg-gray-900 text-white
+                                  rounded-xl font-bold
+                                  flex items-center justify-center gap-2
+                                  hover:bg-black transition"
                                 >
                                   상품 정보 확인하러 가기{" "}
                                   <ExternalLink size={16} />

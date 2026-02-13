@@ -114,7 +114,7 @@
   opacity: 38%;
 }
 
-.gsi-material-button:not(:disabled):active .gsi-material-button-state, 
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
 .gsi-material-button:not(:disabled):focus .gsi-material-button-state {
   background-color: #303030;
   opacity: 12%;
@@ -140,11 +140,15 @@ body {
 
 /* Hide scrollbars but keep scroll functionality (cross-browser) */
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
   width: 0;
   height: 0;
 }
@@ -155,6 +159,7 @@ body {
   --scroll-thumb: #cfcfcf;
   --scroll-thumb-hover: #b6b6b6;
 }
+
 .dark :root,
 .dark {
   --scroll-track: #10141a;
@@ -163,44 +168,54 @@ body {
 }
 
 .custom-scrollbar-horizontal {
-  scrollbar-width: auto; /* Firefox */
+  scrollbar-width: auto;
+  /* Firefox */
   scrollbar-color: var(--scroll-thumb) var(--scroll-track);
 }
+
 .custom-scrollbar-horizontal::-webkit-scrollbar {
   height: 10px;
 }
+
 .custom-scrollbar-horizontal::-webkit-scrollbar-track {
   background: var(--scroll-track);
   border-radius: 9999px;
 }
+
 .custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
   background: var(--scroll-thumb);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
+
 .custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
   background: var(--scroll-thumb-hover);
 }
 
 /* Themed vertical scrollbar (used for goal cards vertical scroll) */
 .custom-scrollbar-vertical {
-  scrollbar-width: auto; /* Firefox */
+  scrollbar-width: auto;
+  /* Firefox */
   scrollbar-color: var(--scroll-thumb) var(--scroll-track);
 }
+
 .custom-scrollbar-vertical::-webkit-scrollbar {
   width: 10px;
 }
+
 .custom-scrollbar-vertical::-webkit-scrollbar-track {
   background: var(--scroll-track);
   border-radius: 9999px;
 }
+
 .custom-scrollbar-vertical::-webkit-scrollbar-thumb {
   background: var(--scroll-thumb);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
+
 .custom-scrollbar-vertical::-webkit-scrollbar-thumb:hover {
   background: var(--scroll-thumb-hover);
 }

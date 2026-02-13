@@ -28,7 +28,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto w-full px-6">
           <main className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-center lg:min-h-0">
             {/* 1. 왼쪽: 목표 추가 폼 (고정 width) */}
-            <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col scrollbar-hide pb-4 lg:pb-0 relative z-10 pr-4">
+            <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col scrollbar-hide pb-4 lg:pb-0 relative pr-4">
               <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 ">
                 <h2 className="text-lg font-bold mb-4 flex items-center gap-2 dark:text-white ">
                   ✨ 목표 추가
