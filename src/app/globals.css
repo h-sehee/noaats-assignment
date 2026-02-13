@@ -131,3 +131,48 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide scrollbars but keep scroll functionality (cross-browser) */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+/* Themed horizontal scrollbar (used for goal list horizontal scroll) */
+:root {
+  --scroll-track: #f1f1f1;
+  --scroll-thumb: #cfcfcf;
+  --scroll-thumb-hover: #b6b6b6;
+}
+.dark :root,
+.dark {
+  --scroll-track: #10141a;
+  --scroll-thumb: #2b3946;
+  --scroll-thumb-hover: #3a4a57;
+}
+
+.custom-scrollbar-horizontal {
+  scrollbar-width: auto; /* Firefox */
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar {
+  height: 10px;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 9999px;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+}

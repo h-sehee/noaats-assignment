@@ -19,7 +19,7 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
+        <div className="mt-4 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
           <div className="text-center md:text-center">
             <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
               Save<span className="text-blue-600">Mate</span>
