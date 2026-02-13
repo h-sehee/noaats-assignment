@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import { getSavingProducts } from "@/services/fssAPI";
+import ProfileSettings from "./ProfileSettings";
 import GoalChart from "./GoalChart";
 import { AlertCircle, ExternalLink, Sparkles } from "lucide-react";
 
@@ -27,6 +28,9 @@ export default function GoalList() {
   const [userMainBank, setUserMainBank] = useState<string>("");
   const [showOnlyMainBank, setShowOnlyMainBank] = useState(false);
 
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+
   // 수정 모드 상태 관리
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -38,6 +42,33 @@ export default function GoalList() {
 
   useEffect(() => {
     if (!user) return;
+
+    const checkUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        console.log("프로필 데이터:", docSnap.data());
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // 💡 핵심: 필수 정보(예: 직업, 주거래은행)가 하나라도 없으면 '미완성 프로필'로 간주
+          if (!data.jobType || !data.mainBank || !data.birthDate) {
+            setIsNewUser(true);
+            setShowProfileSettings(true);
+          }
+        } else {
+          // 아예 문서가 없으면(완전 신규) 무조건 오픈
+          setIsNewUser(true);
+          setShowProfileSettings(true);
+        }
+      } catch (error) {
+        console.error("프로필 확인 실패:", error);
+      }
+    };
+    checkUserProfile();
 
     // 1. 목표 리스트 구독
     const q = query(
@@ -663,6 +694,15 @@ export default function GoalList() {
             위에서 새로운 저축 목표를 추가해보세요! 🚀
           </p>
         </div>
+      )}
+
+      {showProfileSettings && (
+        <ProfileSettings 
+          onClose={() => {
+            setShowProfileSettings(false);
+            setIsNewUser(false); // 닫으면 신규 유저 모드 해제
+          }} 
+        />
       )}
     </div>
   );
