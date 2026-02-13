@@ -15,8 +15,36 @@ const schema: any = {
           productName: { type: SchemaType.STRING },
           bankName: { type: SchemaType.STRING },
           maxInterestRate: { type: SchemaType.NUMBER },
+          baseRate: { type: SchemaType.NUMBER }, // 기본 금리 필드 명시
+
+          // 💡 핵심 추가: 우대 금리 상세 내역 리스트
+          primeConditions: {
+            type: SchemaType.ARRAY,
+            description:
+              "List of specific conditions to get prime rates (e.g., 'Salary Transfer: 0.5%')",
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                label: {
+                  type: SchemaType.STRING,
+                  description:
+                    "Short description of the condition (e.g. '급여이체', '첫거래')",
+                },
+                rate: {
+                  type: SchemaType.NUMBER,
+                  description: "Bonus rate value (e.g. 0.5)",
+                },
+              },
+              required: ["label", "rate"],
+            },
+          },
           isCompound: { type: SchemaType.BOOLEAN },
-          tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING },description: "Must include at least 2 keywords, e.g., #비대면우대, #직장인맞춤, #지역우대" },
+          tags: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+            description:
+              "Must include 2~3 keywords, e.g., #비대면우대, #직장인맞춤, #지역우대",
+          },
           reason: { type: SchemaType.STRING },
           limitWarning: { type: SchemaType.STRING },
           managementTip: { type: SchemaType.STRING },
@@ -37,7 +65,7 @@ export async function POST(request: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const { userData, productList } = await request.json();
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: schema,
@@ -47,43 +75,53 @@ export async function POST(request: Request) {
 
     // 2. 프롬프트
     const prompt = `
-  너는 대한민국 최고의 1:1 맞춤형 금융 비서이자 데이터 분석가야. 
-제공된 [유저 정보]와 [상품 리스트(JSON)]를 바탕으로, 유저가 실제로 받을 수 있는 '현실적 최고 금리'를 계산하고 유저 상황에 맞는 최적의 상품 TOP 3를 추천해줘.
+# Role
+대한민국 최고의 금융 상품 분석가 및 추천 시스템.
 
-[유저 정보]
-- 현재 날짜: ${Date.now()}
-- 생년월일: ${userData.birthDate} (만 나이를 정확히 계산하여 join_member 조건과 대조할 것)
-- 직업: ${userData.jobType} (급여이체 우대 및 직업 제한 상품 확인용)
-- 거주지: ${userData.location} (지방 은행의 지역민 우대 금리 확인용)
-- 주거래 은행: ${userData.mainBank} (주거래 우대 금리 확인용)
-- 월 저축 가능액: ${userData.monthlySaving}원
-- 목표 저축 기간: ${userData.term}개월 (save_trm과 일치하는 옵션만 분석할 것)
-- 선호 가입 방식: ${userData.preferOnline ? "비대면" : "대면"} (join_way와 대조)
-- 소득 수준: ${userData.incomeLevel} (join_deny: 2 서민전용 상품 가입 자격 확인용)
-- 월 카드 사용액: ${userData.monthlySpending}원 (spcl_cnd의 카드 실적 조건과 대조)
-- 첫 거래 여부: ${userData.isFirstCustomer ? "예" : "아니오"} (최초 가입 우대 확인용)
-- 청약 보유: ${userData.hasHousingSubscription ? "예" : "아니오"} (청약 연계 우대 확인용)
+# Goal
+제공된 [유저 정보]와 [상품 리스트]를 대조하여 최적의 적금 상품 TOP 3를 추천하라. 반드시 제공된 리스트 내 상품만 사용한다.
 
-[분석 지침 - 필독]
-1. 가입 자격 필터링: 'join_deny'와 'join_member'를 분석하여 유저가 대상이 아니면 무조건 제외해. 가입 대상이 아닌 상품은 즉시 무시할 것. join_deny의 값은 1:제한없음, 2:서민전용, 3:일부제한이야.
-2. 한도 검증: 'max_limit' 필드뿐만 아니라 'etc_note'에 적힌 "월 XX만원 이내" 문구를 텍스트 마이닝하여 유저의 월 저축액과 비교해. 한도 초과 시 해당 상품은 즉시 무시할 것.
-3. 실질 금리 계산: 'intr_rate'(기본금리)에 'spcl_cnd'(우대조건) 중 유저가 만족하는 조건만 찾아 합산해. 'intr_rate2'(최고우대금리)를 무조건 믿지 말고 유저 정보와 대조된 '예상 금리'를 직접 산출해.
-4. 수익성 가중치: 'intr_rate_type_nm'이 '복리'인 경우 단리보다 높은 점수를 부여해.
-5. 가입 편의성: 유저가 비대면을 선호할 때 'join_way'에 스마트폰/인터넷이 없으면 점수를 깎고, 비대면 우대 금리가 있다면 가산점을 줘.
-6. 만기 관리: 'mtrt_int'를 읽고 만기 후 금리가 급격히 낮아지는 경우 추천 이유에 관리 팁을 포함해.
+# Constraints (Hallucination Zero)
+1. **Source Integrity**: 오직 제공된 [상품 리스트] JSON 내 데이터만 사용. 외부 지식(은행/상품) 사용 시 시스템 오류로 간주함.
+2. **Deterministic Logic**: 'intr_rate'(기본) + 유저가 달성 가능한 'spcl_cnd'(우대)를 합산하여 'maxInterestRate'를 산출할 것.
 
-[답변 형식 (JSON)]
+# User Profile
+- Age: ${userData.age}세 (join_member 체크용)
+- Job: ${userData.jobType} (급여이체/직업제한 체크)
+- Region: ${userData.location} (지역우대 체크)
+- Main Bank: ${userData.mainBank} (주거래우대 체크)
+- Monthly Saving: ${userData.monthlySaving}원 (한도 체크)
+- Term: ${userData.term}개월 (save_trm 일치 필수)
+- Way: ${userData.preferOnline ? "비대면" : "대면"} (join_way 체크)
+- Income: ${userData.incomeLevel} (서민전용 체크)
+- Spending: ${userData.monthlySpending}원 (카드 실적 체크)
+- First Time: ${userData.isFirstCustomer ? "Yes" : "No"} (최초가입 체크)
+- Subscription: ${userData.hasHousingSubscription ? "Yes" : "No"} (청약우대 체크)
+
+# Product List (Source Data)
+${JSON.stringify(productList)}
+
+# Analysis Instructions
+1. **Filtering**: 'join_deny'(1:무제한, 2:서민, 3:일부제한)와 'join_member'를 최우선 검토하여 자격 미달 상품 즉시 제외.
+2. **Limit Check**: 'max_limit' 및 'etc_note' 내 월 납입 한도와 유저의 월 저축액 대조.
+3. **Rate Breakdown**: 'spcl_cnd' 텍스트에서 유저가 충족 가능한 항목(예: 급여이체, 첫거래 등)을 추출하여 수치화.
+4. **Scoring**: '복리'(intr_rate_type_nm) 상품 및 비대면 선호 시 '스마트폰' 가입 상품에 가중치 부여.
+
+# Output Format (JSON Only)
+Schema를 준수하여 recommendations 배열을 반환하라.
 {
   "recommendations": [
     {
-      "productName": "...",
-      "bankName": "...",
-      "maxInterestRate": "숫자(AI가 계산한 예상 실질 금리)",
-      "isCompound": "true/false",
-      "tags": ["#비대면우대", "#직장인맞춤", "#지역우대"] 주거래 우대는 굳이 태그로 표시하지 않음,
-      "reason": "왜 이 금리를 받을 수 있는지 유저의 나이, 직업, 거주지 등을 근거로 상세 설명하되 최대한 간결하게 작성",
-      "limitWarning": "한도 관련 주의사항 (예: 월 최대 50만원까지만 저축 가능)",
-      "managementTip": "mtrt_int를 바탕으로 한 만기 후 관리 조언"
+      "productName": "상품명",
+      "bankName": "은행명",
+      "maxInterestRate": 0.0,
+      "baseRate": 0.0,
+      "primeConditions": [{ "label": "항목명", "rate": 0.0 }],
+      "isCompound": true/false,
+      "tags": ["#태그1", "#태그2"] 주거래 우대는 제외하고 적립유형은 필수로 넣을것,
+      "reason": "나이, 직업, 은행 거래 패턴에 근거한 추천 이유(간결하게)",
+      "limitWarning": "한도 관련 주의사항",
+      "managementTip": "만기 후 관리 조언"
     }
   ]
 }
