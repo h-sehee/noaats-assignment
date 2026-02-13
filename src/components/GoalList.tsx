@@ -114,7 +114,7 @@ export default function GoalList() {
 
         {/* 목표가 없을 때 안내 문구 */}
         {goals.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+          <div className="text-center p-6 py-12 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400">
               아직 등록된 목표가 없습니다.
             </p>
