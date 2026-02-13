@@ -18,6 +18,7 @@ interface UseRecommendationsParams {
   onRecommendationsReady: (goalId: string, recommendations: any[]) => void;
   onLoadingStart: (goalId: string) => void;
   onLoadingEnd: (goalId: string) => void;
+  onError: (goalId: string, message: string) => void;
 }
 
 export function useRecommendations(params: UseRecommendationsParams) {
@@ -28,67 +29,64 @@ export function useRecommendations(params: UseRecommendationsParams) {
     onRecommendationsReady,
     onLoadingStart,
     onLoadingEnd,
+    onError,
   } = params;
 
   // 상품 필터링 및 정렬
-  const filterAndSortSimple = useCallback(
-    (input: FilterAndSortInput) => {
-      const { baseList, optionList, goal, applyBankFilter, userMainBank } =
-        input;
+  const filterAndSortSimple = useCallback((input: FilterAndSortInput) => {
+    const { baseList, optionList, goal, applyBankFilter, userMainBank } = input;
 
-      // 1. [병합] 기본 정보 + 금리 옵션 합치기
-      const mergedProducts = baseList
-        .map((base) => {
-          const matchOption = optionList.find(
-            (opt) =>
-              opt.fin_co_no === base.fin_co_no &&
-              opt.fin_prdt_cd === base.fin_prdt_cd &&
-              opt.save_trm === goal.term.toString()
-          );
-          return matchOption ? { ...base, ...matchOption } : null;
-        })
-        .filter((p) => p !== null);
+    // 1. [병합] 기본 정보 + 금리 옵션 합치기
+    const mergedProducts = baseList
+      .map((base) => {
+        const matchOption = optionList.find(
+          (opt) =>
+            opt.fin_co_no === base.fin_co_no &&
+            opt.fin_prdt_cd === base.fin_prdt_cd &&
+            opt.save_trm === goal.term.toString(),
+        );
+        return matchOption ? { ...base, ...matchOption } : null;
+      })
+      .filter((p) => p !== null);
 
-      // 2. [필터] 한도 및 은행 필터 적용
-      const validProducts = mergedProducts.filter((p) => {
-        if (p.max_limit !== null && p.max_limit < goal.monthlySaving) {
+    // 2. [필터] 한도 및 은행 필터 적용
+    const validProducts = mergedProducts.filter((p) => {
+      if (p.max_limit !== null && p.max_limit < goal.monthlySaving) {
+        return false;
+      }
+      if (applyBankFilter && userMainBank) {
+        if (!p.kor_co_nm.includes(userMainBank)) {
           return false;
         }
-        if (applyBankFilter && userMainBank) {
-          if (!p.kor_co_nm.includes(userMainBank)) {
-            return false;
-          }
-        }
-        return true;
-      });
+      }
+      return true;
+    });
 
-      // 3. [정렬] 가중치 기반 스코어링
-      const sortedProducts = validProducts.sort((a, b) => {
-        const baseA = a.intr_rate || 0;
-        const maxA = a.intr_rate2 || baseA;
+    // 3. [정렬] 가중치 기반 스코어링
+    const sortedProducts = validProducts.sort((a, b) => {
+      const baseA = a.intr_rate || 0;
+      const maxA = a.intr_rate2 || baseA;
 
-        const baseB = b.intr_rate || 0;
-        const maxB = b.intr_rate2 || baseB;
+      const baseB = b.intr_rate || 0;
+      const maxB = b.intr_rate2 || baseB;
 
-        const scoreA = baseA * 0.4 + maxA * 0.6;
-        const scoreB = baseB * 0.4 + maxB * 0.6;
+      const scoreA = baseA * 0.4 + maxA * 0.6;
+      const scoreB = baseB * 0.4 + maxB * 0.6;
 
-        return scoreB - scoreA;
-      });
+      return scoreB - scoreA;
+    });
 
-      // 4. [추출] 상위 15개만 반환
-      return sortedProducts.slice(0, 15).map((p) => ({
-        bankName: p.kor_co_nm,
-        productName: p.fin_prdt_nm,
-        baseRate: p.intr_rate,
-        maxRate: p.intr_rate2,
-        condition: p.spcl_cnd,
-        joinWay: p.join_way,
-        note: p.etc_note,
-      }));
-    },
-    []
-  );
+    // 4. [추출] 상위 15개만 반환
+    return sortedProducts.slice(0, 15).map((p) => ({
+      bankName: p.kor_co_nm,
+      productName: p.fin_prdt_nm,
+      baseRate: p.intr_rate,
+      maxRate: p.intr_rate2,
+      condition: p.spcl_cnd,
+      joinWay: p.join_way,
+      note: p.etc_note,
+    }));
+  }, []);
 
   // 추천 데이터 가져오기
   const fetchRecommendations = useCallback(
@@ -108,6 +106,16 @@ export function useRecommendations(params: UseRecommendationsParams) {
 
         // 1. 금감원 데이터 가져오기
         const rawProducts = await getSavingProducts(term);
+
+        if (
+          !rawProducts ||
+          !rawProducts.result ||
+          !rawProducts.result.baseList
+        ) {
+          throw new Error(
+            "금융감독원 서버에서 상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+          );
+        }
 
         // 2. 사용자 정보 가져오기
         const userDoc = await getDoc(doc(db, "users", userId));
@@ -162,15 +170,36 @@ export function useRecommendations(params: UseRecommendationsParams) {
           }),
         });
 
+        if (!aiResponse.ok) {
+          const errData = await aiResponse.json();
+          throw new Error(
+            errData.error || "AI 분석 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.",
+          );
+        }
+
         const finalData = await aiResponse.json();
 
         onRecommendationsReady(goalId, finalData.recommendations);
       } catch (error) {
         console.error("Failed to fetch products:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        onError(goalId, errorMessage); // 부모 컴포넌트에게 에러 전달
+      } finally {
         onLoadingEnd(goalId);
       }
     },
-    [goals, userMainBank, expandedGoalId, filterAndSortSimple, onRecommendationsReady, onLoadingStart, onLoadingEnd]
+    [
+      goals,
+      userMainBank,
+      expandedGoalId,
+      filterAndSortSimple,
+      onRecommendationsReady,
+      onLoadingStart,
+      onLoadingEnd,
+    ],
   );
 
   return { fetchRecommendations, filterAndSortSimple };

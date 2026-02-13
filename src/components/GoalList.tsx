@@ -49,6 +49,10 @@ export default function GoalList() {
     },
     onLoadingStart: (goalId) => setGoalLoading(goalId, true),
     onLoadingEnd: (goalId) => setGoalLoading(goalId, false),
+    onError: (goalId, message) => {
+      setGoalLoading(goalId, false);
+      alert(`오류 발생: ${message}`);
+    }
   });
 
   const handleFetchRecommendations = async (goalId: string) => {
