@@ -125,7 +125,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* 폼 영역 (스크롤 가능) */}
-        <form onSubmit={handleSave} className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
+        <form onSubmit={handleSave} className="p-6 space-y-8 overflow-y-auto custom-scrollbar-vertical">
           
           {/* 1. 기본 인적 사항 */}
           <section className="space-y-4">
