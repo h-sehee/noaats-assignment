@@ -152,7 +152,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="w-full p-3 pl-10 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                    placeholder="예: 충남 아산시"
+                    placeholder="예: 서울특별시 강남구"
                   />
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">연 소득 수준)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">연 소득 수준</label>
                 <select
                   value={formData.incomeLevel}
                   onChange={(e) => setFormData({ ...formData, incomeLevel: e.target.value })}
@@ -311,7 +311,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
             ) : (
               <>
                 <Save size={20} />
-                프로필 업데이트
+                프로필 저장
               </>
             )}
           </button>
