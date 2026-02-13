@@ -50,8 +50,6 @@ export default function GoalList() {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
 
-        console.log("프로필 데이터:", docSnap.data());
-
         if (docSnap.exists()) {
           const data = docSnap.data();
           // 💡 핵심: 필수 정보(예: 직업, 주거래은행)가 하나라도 없으면 '미완성 프로필'로 간주
@@ -122,6 +120,7 @@ export default function GoalList() {
       baseList: any[],
       optionList: any[],
       goal: any,
+      applyBankFilter: boolean,
     ) => {
       // 1. [병합] 기본 정보 + 금리 옵션 합치기 (기간 맞는 것만!)
       const mergedProducts = baseList
@@ -144,6 +143,12 @@ export default function GoalList() {
         // (null인 경우는 한도 없음으로 간주하고 통과시킴)
         if (p.max_limit !== null && p.max_limit < goal.monthlySaving) {
           return false;
+        }
+        if (applyBankFilter && userMainBank) {
+          // 상품의 은행명에 내 주거래 은행 이름이 없으면 탈락!
+          if (!p.kor_co_nm.includes(userMainBank)) {
+            return false;
+          }
         }
         return true;
       });
@@ -194,14 +199,39 @@ export default function GoalList() {
         rawProducts.result.baseList,
         rawProducts.result.optionList,
         { term: term, monthlySaving: currentGoal.monthlySaving },
+        showOnlyMainBank,
       );
+      console.log("AI Ready Data:", aiReadyData);
 
       if (aiReadyData.length === 0) {
-        alert("조건에 맞는 상품이 없습니다.");
+        alert(
+          showOnlyMainBank
+            ? `${userMainBank}의 조건에 맞는 상품이 없습니다.`
+            : "조건에 맞는 상품이 없습니다.",
+        );
+        setGoals((prev) =>
+          prev.map((g) => (g.id === goalId ? { ...g, isLoading: false } : g)),
+        );
         return;
       }
 
-      console.log("AI에게 보낼 데이터:", aiReadyData);
+      let userAge = 20;
+
+      if (fullUserData && fullUserData.birthDate) {
+        const today = new Date();
+        const birthDate = new Date(fullUserData.birthDate);
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+          age--;
+        }
+        userAge = age;
+      }
 
       // 3. Gemini API 호출
       const aiResponse = await fetch("/api/recommend", {
@@ -209,7 +239,8 @@ export default function GoalList() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userData: {
-            ...fullUserData, // 나이, 직업, 카드사용액, 첫거래여부 등 포함
+            ...fullUserData, // 직업, 카드사용액, 첫거래여부 등 포함
+            age: userAge,
             targetAmount: goals.find((g) => g.id === goalId)?.targetAmount,
             monthlySaving: goals.find((g) => g.id === goalId)?.monthlySaving,
             term: term,
@@ -278,21 +309,6 @@ export default function GoalList() {
     <div className="mt-8 grid gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold dark:text-white">나의 저축 목표</h2>
-
-        {/* ✅ 상단 필터 (주거래 은행이 있을 때만 표시) */}
-        {userMainBank && (
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showOnlyMainBank}
-              onChange={(e) => setShowOnlyMainBank(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {userMainBank} 상품만 보기
-            </span>
-          </label>
-        )}
       </div>
 
       {goals.map((goal) => (
@@ -447,38 +463,78 @@ export default function GoalList() {
                 </div>
 
                 {/* 상품 찾기 버튼 */}
-                {goal.recommendations.length === 0 && (
-                  <button
-                    onClick={() => fetchRecommendations(goal.id, goal.term)}
-                    disabled={goal.isLoading}
-                    className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-xl text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition flex items-center gap-2"
-                  >
-                    {goal.isLoading ? (
-                      <span className="animate-pulse">분석 중...</span>
-                    ) : (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
-                        상품 찾기
-                      </>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-gray-50/50 dark:bg-gray-900/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-blue-500" />
+                    <p className="text-sm font-bold text-gray-700 dark:text-gray-300 tracking-tight">
+                      {goal.recommendations.length > 0
+                        ? "맞춤 추천 결과"
+                        : "AI 상품 분석"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                    {/* 1. 주거래 은행 필터 (항상 노출되어 '왔다갔다' 가능) */}
+                    {userMainBank && (
+                      <label className="flex items-center gap-2 cursor-pointer select-none group/filter">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyMainBank}
+                          onChange={(e) =>
+                            setShowOnlyMainBank(e.target.checked)
+                          }
+                          disabled={
+                            !!(
+                              expandedGoalId &&
+                              goals.find((g) => g.id === expandedGoalId)
+                                ?.recommendations?.length > 0
+                            )
+                          }
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 group-hover/filter:text-blue-500 transition-colors">
+                          {userMainBank}만 보기
+                        </span>
+                      </label>
                     )}
-                  </button>
-                )}
+
+                    {/* 2. 실행 버튼 (상태에 따라 텍스트 변경) */}
+                    <button
+                      onClick={() => fetchRecommendations(goal.id, goal.term)}
+                      disabled={goal.isLoading}
+                      className="px-4 py-2 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-bold hover:shadow-md transition flex items-center gap-2 border border-blue-100 dark:border-gray-700 disabled:opacity-50"
+                    >
+                      {goal.isLoading ? (
+                        <span className="animate-pulse flex items-center gap-2">
+                          분석 중...
+                        </span>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          {goal.recommendations.length > 0
+                            ? "다시 분석하기"
+                            : "상품 찾기"}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* 추천 상품 리스트 영역 */}
-              {goal.recommendations.length > 0 && (
+              {goal.recommendations.length > 0 && !goal.isLoading && (
                 <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-700">
                   <div
                     className="flex justify-between items-center cursor-pointer group select-none"
@@ -514,12 +570,16 @@ export default function GoalList() {
                         // 1. 전체 상품 데이터
                         const allProducts = goal.recommendations;
 
+                        console.log("All Products:", allProducts);
+
                         // 2. 주거래 은행 상품만 찾기 (금리 무관)
                         const myBankProducts = userMainBank
                           ? allProducts.filter((p: any) =>
                               p.bankName.includes(userMainBank),
                             )
                           : [];
+
+                        console.log("My Bank Products:", myBankProducts);
 
                         // 3. 주거래 은행을 제외한 나머지 중 금리 높은 순 TOP 3
                         const topRateProducts = allProducts
@@ -581,7 +641,15 @@ export default function GoalList() {
                                           🏆 주거래 우대
                                         </span>
                                       )}
-                                      {/* AI가 생성한 태그들 */}
+                                      <span
+                                        className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
+                                          prod.isCompound
+                                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" // 복리
+                                            : "bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300" // 단리
+                                        }`}
+                                      >
+                                        {prod.isCompound ? "복리" : "단리"}
+                                      </span>
                                       {prod.tags?.map((tag: string) => (
                                         <span
                                           key={tag}
@@ -600,11 +668,89 @@ export default function GoalList() {
                                   </div>
                                   <div className="text-right">
                                     <p className="text-xs text-gray-400">
-                                      AI 예상 금리
+                                      예상 금리
                                     </p>
-                                    <p className="text-2xl font-black text-blue-600">
-                                      {prod.maxInterestRate}%
-                                    </p>
+                                    <div
+                                      className={`relative group inline-block ${isChartOpen ? "cursor-help" : ""}`}
+                                    >
+                                      {/* 1. 금리 숫자 (호버 시 밑줄 효과 추가) */}
+                                      <span
+                                        className={`text-2xl font-black text-blue-600 dark:text-blue-400 decoration-dotted underline-offset-4 ${isChartOpen ? "group-hover:underline" : ""} transition-all`}
+                                      >
+                                        {prod.maxInterestRate}%
+                                      </span>
+
+                                      {/* 2. 툴팁 (평소엔 숨김, 숫자에 호버하면 등장) */}
+                                      {isChartOpen && (
+                                        <div className="absolute right-0 top-full mt-2 w-52 p-4 bg-gray-900/95 text-white text-xs rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[99] backdrop-blur-sm border border-gray-700 pointer-events-none transform translate-y-1 group-hover:translate-y-0">
+                                          {/* 툴팁 헤더 */}
+                                          <div className="font-bold text-gray-300 mb-2 border-b border-gray-700 pb-1">
+                                            금리 구성 상세
+                                          </div>
+
+                                          <div className="space-y-1.5">
+                                            {/* 기본 금리 */}
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-gray-400">
+                                                기본 금리
+                                              </span>
+                                              <span className="font-mono bg-gray-800 px-2 py-0.5 rounded text-gray-200">
+                                                {prod.baseRate || 0}%
+                                              </span>
+                                            </div>
+
+                                            {/* 우대 금리 (계산식) */}
+                                            {prod.primeConditions &&
+                                            prod.primeConditions.length > 0 ? (
+                                              <div className="py-2 border-t border-b border-gray-700/50 my-1 space-y-1">
+                                                <div className="text-[10px] text-gray-500 mb-1">
+                                                  우대 조건 달성 시
+                                                </div>
+
+                                                {prod.primeConditions.map(
+                                                  (cond: any, idx: number) => (
+                                                    <div
+                                                      key={idx}
+                                                      className="flex justify-between items-center text-xs"
+                                                    >
+                                                      <span className="text-gray-300 truncate max-w-[120px]">
+                                                        • {cond.label}
+                                                      </span>
+                                                      <span className="font-mono text-blue-300">
+                                                        +{cond.rate.toFixed(1)}%
+                                                      </span>
+                                                    </div>
+                                                  ),
+                                                )}
+                                              </div>
+                                            ) : (
+                                              // 데이터 없을 경우 기존 단순 계산 방식 보여주기 (Fallback)
+                                              <div className="flex justify-between items-center text-blue-300">
+                                                <span>우대 금리 (최대)</span>
+                                                <span className="font-mono bg-blue-900/40 px-2 py-0.5 rounded text-blue-200">
+                                                  +
+                                                  {(
+                                                    (prod.maxRate || 0) -
+                                                    (prod.baseRate || 0)
+                                                  ).toFixed(2)}
+                                                  %
+                                                </span>
+                                              </div>
+                                            )}
+                                            {/* 최종 합계 */}
+                                            <div className="flex justify-between items-center font-bold text-white text-sm">
+                                              <span>최고 적용 금리</span>
+                                              <span className="font-mono text-blue-400 text-lg">
+                                                {prod.maxInterestRate}%
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* 말풍선 꼬리 (위쪽을 향함) */}
+                                          <div className="absolute -top-1.5 right-6 w-3 h-3 bg-gray-900 rotate-45 border-l border-t border-gray-700"></div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
 
@@ -625,6 +771,7 @@ export default function GoalList() {
                                     monthlySaving={goal.monthlySaving}
                                     term={goal.term}
                                     interestRate={prod.maxInterestRate}
+                                    isCompound={prod.isCompound}
                                   />
 
                                   <div className="mt-6 space-y-4">
@@ -679,6 +826,11 @@ export default function GoalList() {
                   )}
                 </div>
               )}
+              {goal.isLoading && (
+                <div className="py-12 text-center text-gray-400 text-sm animate-pulse">
+                  유저님의 정보를 바탕으로 최적의 상품을 계산하고 있습니다...
+                </div>
+              )}
             </>
           )}
         </div>
@@ -697,11 +849,11 @@ export default function GoalList() {
       )}
 
       {showProfileSettings && (
-        <ProfileSettings 
+        <ProfileSettings
           onClose={() => {
             setShowProfileSettings(false);
             setIsNewUser(false); // 닫으면 신규 유저 모드 해제
-          }} 
+          }}
         />
       )}
     </div>
