@@ -40,12 +40,42 @@ export default function GoalCard({
   setSelectedChartId,
 }: GoalCardProps) {
   const isEditing = editingId === goal.id;
+  const [editError, setEditError] = useState<string | null>(null);
 
   const handleSaveClick = async () => {
-    const success = await onSaveEdit(goal.id);
-    if (success) {
-      setEditingId(null);
+    const target = Number(editFormData.targetAmount);
+    const monthly = Number(editFormData.monthlySaving);
+
+    // 검사 1: 음수나 0원 입력 방지
+    if (target <= 0) {
+      setEditError("목표 금액은 0원보다 커야 합니다.");
+      return; // ❌ 여기서 함수 종료 (onSaveEdit 실행 안 됨)
     }
+    if (monthly <= 0) {
+      setEditError("월 저축액은 0원보다 커야 합니다.");
+      return; // ❌
+    }
+    // 검사 2: 논리적 오류 방지
+    if (monthly > target) {
+      setEditError("월 저축액이 목표 금액보다 클 수 없습니다.");
+      return; // ❌
+    }
+    try {
+      const success = await onSaveEdit(goal.id);
+
+      if (success) {
+        setEditingId(null);
+        setEditError(null); // 성공하면 에러 메시지 초기화
+      }
+    } catch (error) {
+      console.error("Save failed", error);
+      setEditError("저장 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleEditChange = (field: string, value: string | number) => {
+    setEditFormData((prev: any) => ({ ...prev, [field]: value }));
+    if (editError) setEditError(null); // 수정 시작하면 에러 메시지 삭제
   };
 
   return (
@@ -64,6 +94,11 @@ export default function GoalCard({
       {isEditing ? (
         // [수정 모드 UI]
         <div className="space-y-4">
+          {editError && (
+            <div className="p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400 font-medium">
+              ⚠️ {editError}
+            </div>
+          )}
           <div>
             <label className="text-xs text-gray-500 dark:text-gray-400">
               목표 명칭
@@ -72,12 +107,7 @@ export default function GoalCard({
               type="text"
               className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               value={editFormData.title}
-              onChange={(e) =>
-                setEditFormData({
-                  ...editFormData,
-                  title: e.target.value,
-                })
-              }
+              onChange={(e) => handleEditChange("title", e.target.value)}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -87,14 +117,10 @@ export default function GoalCard({
               </label>
               <input
                 type="number"
+                min="1000"
                 className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={editFormData.targetAmount}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    targetAmount: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => handleEditChange("targetAmount", Number(e.target.value))}
               />
             </div>
             <div>
@@ -103,14 +129,10 @@ export default function GoalCard({
               </label>
               <input
                 type="number"
+                min="1" // 음수 방지
                 className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={editFormData.monthlySaving}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    monthlySaving: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => handleEditChange("monthlySaving", Number(e.target.value))}
               />
             </div>
           </div>
@@ -121,12 +143,7 @@ export default function GoalCard({
             <select
               className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               value={editFormData.term}
-              onChange={(e) =>
-                setEditFormData({
-                  ...editFormData,
-                  term: Number(e.target.value),
-                })
-              }
+              onChange={(e) => handleEditChange("term", Number(e.target.value))}
             >
               <option value="6">6개월</option>
               <option value="12">12개월</option>
@@ -136,7 +153,10 @@ export default function GoalCard({
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <button
-              onClick={() => setEditingId(null)}
+              onClick={() => {
+                setEditingId(null);
+                setEditError(null); // 취소 시 에러도 초기화
+              }}
               className="px-3 py-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded"
             >
               취소
