@@ -38,7 +38,10 @@ export default function GoalForm({ onComplete }: { onComplete: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 "
+    >
       <h2 className="text-xl font-bold text-gray-800 dark:text-white">새 저축 목표 설정</h2>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">목표 명칭</label>
