@@ -47,13 +47,13 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
     birthDate: "",
     location: "",
     jobType: "직장인",
-    mainBank: "",         // ✅ 추가: 주거래 은행
+    mainBank: "", // ✅ 추가: 주거래 은행
     monthlySpending: 0,
-    incomeLevel: "",      // ✅ 추가: 소득 구간 (서민금융 상품용)
+    incomeLevel: "", // ✅ 추가: 소득 구간 (서민금융 상품용)
     isFirstCustomer: false,
     hasHousingSubscription: false,
-    isSoldier: false,     // ✅ 추가: 군인 여부
-    preferOnline: true,   // ✅ 추가: 비대면 선호 여부
+    isSoldier: false, // ✅ 추가: 군인 여부
+    preferOnline: true, // ✅ 추가: 비대면 선호 여부
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,7 +86,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
           ...formData,
           updatedAt: new Date(),
         },
-        { merge: true }
+        { merge: true },
       );
       // 저장 후 잠시 대기했다가 닫기 (UX)
       setTimeout(() => {
@@ -103,10 +103,21 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col max-h-[90vh]">
-        
+      <div
+        className="
+      bg-white dark:bg-gray-800
+      w-full max-w-2xl rounded-3xl shadow-2xl
+      border border-gray-100 dark:border-gray-700
+      flex flex-col max-h-[90vh]"
+      >
         {/* 헤더 */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-md rounded-t-3xl sticky top-0 z-10">
+        <div
+          className="
+        p-6 border-b border-gray-100 dark:border-gray-700
+        flex justify-between items-center
+        bg-gray-50/80 dark:bg-gray-800/80
+        backdrop-blur-md rounded-t-3xl sticky top-0 z-10"
+        >
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
               <User className="text-blue-600" size={24} />
@@ -125,8 +136,10 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* 폼 영역 (스크롤 가능) */}
-        <form onSubmit={handleSave} className="p-6 space-y-8 overflow-y-auto custom-scrollbar-vertical">
-          
+        <form
+          onSubmit={handleSave}
+          className="p-6 space-y-8 overflow-y-auto custom-scrollbar-vertical"
+        >
           {/* 1. 기본 인적 사항 */}
           <section className="space-y-4">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-200 flex items-center gap-2 border-b pb-2 dark:border-gray-700">
@@ -134,24 +147,45 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">생년월일</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  생년월일
+                </label>
                 <input
                   type="date"
                   value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  onChange={(e) =>
+                    setFormData({ ...formData, birthDate: e.target.value })
+                  }
+                  className="
+                  w-full p-3
+                  bg-gray-50 dark:bg-gray-900
+                  rounded-xl outline-none transition
+                  border border-gray-200 dark:border-gray-700
+                  focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">거주 지역</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  거주 지역
+                </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 text-gray-400" size={16} />
+                  <MapPin
+                    className="absolute left-3 top-3.5 text-gray-400"
+                    size={16}
+                  />
                   <input
                     type="text"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full p-3 pl-10 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
+                    className="
+                    w-full p-3 pl-10
+                    bg-gray-50 dark:bg-gray-900
+                    rounded-xl outline-none transitio
+                    border border-gray-200 dark:border-gray-700
+                    focus:ring-2 focus:ring-blue-500n"
                     placeholder="예: 서울특별시 강남구"
                   />
                 </div>
@@ -166,11 +200,20 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">직업 유형</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  직업 유형
+                </label>
                 <select
                   value={formData.jobType}
-                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  onChange={(e) =>
+                    setFormData({ ...formData, jobType: e.target.value })
+                  }
+                  className="
+                  w-full p-3
+                  bg-gray-50 dark:bg-gray-900
+                  rounded-xl outline-none transition
+                  border border-gray-200 dark:border-gray-700
+                  focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="학생">학생 (대학생 포함)</option>
                   <option value="직장인">직장인 (급여소득자)</option>
@@ -181,11 +224,20 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">연 소득 수준</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  연 소득 수준
+                </label>
                 <select
                   value={formData.incomeLevel}
-                  onChange={(e) => setFormData({ ...formData, incomeLevel: e.target.value })}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  onChange={(e) =>
+                    setFormData({ ...formData, incomeLevel: e.target.value })
+                  }
+                  className="
+                  w-full p-3
+                  bg-gray-50 dark:bg-gray-900
+                  rounded-xl outline-none transition
+                  border border-gray-200 dark:border-gray-700
+                  focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">선택 안 함</option>
                   <option value="2500만원 이하">2,500만원 이하</option>
@@ -204,13 +256,25 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">주거래 은행</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  주거래 은행
+                </label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-3.5 text-gray-400" size={16} />
+                  <Building
+                    className="absolute left-3 top-3.5 text-gray-400"
+                    size={16}
+                  />
                   <select
                     value={formData.mainBank}
-                    onChange={(e) => setFormData({ ...formData, mainBank: e.target.value })}
-                    className="w-full p-3 pl-10 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    onChange={(e) =>
+                      setFormData({ ...formData, mainBank: e.target.value })
+                    }
+                    className="
+                    w-full p-3 pl-10
+                    bg-gray-50 dark:bg-gray-900
+                    rounded-xl outline-none transition
+                    border border-gray-200 dark:border-gray-700
+                    focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">선택하세요</option>
                     {KOREAN_BANKS.map((bank) => (
@@ -222,14 +286,28 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">월 평균 카드 사용액</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  월 평균 카드 사용액
+                </label>
                 <div className="relative">
-                  <span className="absolute right-4 top-3.5 text-gray-400 text-sm">원</span>
+                  <span className="absolute right-4 top-3.5 text-gray-400 text-sm">
+                    원
+                  </span>
                   <input
                     type="number"
                     value={formData.monthlySpending}
-                    onChange={(e) => setFormData({ ...formData, monthlySpending: Number(e.target.value) })}
-                    className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        monthlySpending: Number(e.target.value),
+                      })
+                    }
+                    className="
+                    w-full p-3
+                    bg-gray-50 dark:bg-gray-900
+                    rounded-xl outline-none transition
+                    border border-gray-200 dark:border-gray-700
+                    focus:ring-2 focus:ring-blue-500"
                     placeholder="0"
                   />
                 </div>
@@ -238,57 +316,110 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
 
             {/* 체크박스 그룹 */}
             <div className="grid grid-cols-1 gap-3 pt-2">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group">
+              <label
+                className="
+              flex items-center gap-3 p-3 rounded-xl
+              border border-gray-100 dark:border-gray-700
+              cursor-pointer
+              hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group"
+              >
                 <input
                   type="checkbox"
                   checked={formData.preferOnline}
-                  onChange={(e) => setFormData({ ...formData, preferOnline: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, preferOnline: e.target.checked })
+                  }
                   className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex items-center gap-2">
-                  <Smartphone size={18} className="text-gray-400 group-hover:text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">스마트폰/비대면 가입을 선호합니다</span>
+                  <Smartphone
+                    size={18}
+                    className="text-gray-400 group-hover:text-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    스마트폰/비대면 가입을 선호합니다
+                  </span>
                 </div>
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group">
+                <label
+                  className="
+                flex items-center gap-3 p-3 rounded-xl
+                border border-gray-100 dark:border-gray-700
+                cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group"
+                >
                   <input
                     type="checkbox"
                     checked={formData.hasHousingSubscription}
-                    onChange={(e) => setFormData({ ...formData, hasHousingSubscription: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        hasHousingSubscription: e.target.checked,
+                      })
+                    }
                     className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
                   />
                   <div className="flex items-center gap-2">
-                    <Building size={18} className="text-gray-400 group-hover:text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">주택청약 보유</span>
+                    <Building
+                      size={18}
+                      className="text-gray-400 group-hover:text-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      주택청약 보유
+                    </span>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group">
+                <label
+                  className="
+                flex items-center gap-3 p-3 rounded-xl
+                border border-gray-100 dark:border-gray-700
+                cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition group"
+                >
                   <input
                     type="checkbox"
                     checked={formData.isFirstCustomer}
-                    onChange={(e) => setFormData({ ...formData, isFirstCustomer: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        isFirstCustomer: e.target.checked,
+                      })
+                    }
                     className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
                   />
                   <div className="flex items-center gap-2">
-                    <Coins size={18} className="text-gray-400 group-hover:text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">첫 거래 우대 대상</span>
+                    <Coins
+                      size={18}
+                      className="text-gray-400 group-hover:text-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      첫 거래 우대 대상
+                    </span>
                   </div>
                 </label>
               </div>
 
               {/* 군인 전용 옵션 */}
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-green-50/50 dark:hover:bg-green-900/10 transition group">
+              <label
+                className="
+              flex items-center gap-3 p-3 rounded-xl
+              border border-gray-100 dark:border-gray-700
+              cursor-pointer hover:bg-green-50/50 dark:hover:bg-green-900/10 transition group"
+              >
                 <input
                   type="checkbox"
                   checked={formData.isSoldier}
-                  onChange={(e) => setFormData({ ...formData, isSoldier: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isSoldier: e.target.checked })
+                  }
                   className="w-5 h-5 rounded text-green-600 focus:ring-green-500"
                 />
                 <div className="flex items-center gap-2">
-                  <Shield size={18} className="text-gray-400 group-hover:text-green-500" />
+                  <Shield
+                    size={18}
+                    className="text-gray-400 group-hover:text-green-500"
+                  />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     현재 복무 중인 군인/입영 예정자입니다 (장병적금 대상)
                   </span>
@@ -296,7 +427,6 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
               </label>
             </div>
           </section>
-
         </form>
 
         {/* 푸터 (저장 버튼) */}
@@ -304,7 +434,13 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
           <button
             onClick={handleSave}
             disabled={isLoading}
-            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-[1.01] transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="
+            w-full py-4
+            bg-gradient-to-r from-blue-600 to-indigo-600
+            text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30
+            hover:shadow-xl hover:scale-[1.01] transition-all
+            flex justify-center items-center gap-2
+            disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="animate-pulse">저장 중...</span>
@@ -316,7 +452,6 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
             )}
           </button>
         </div>
-
       </div>
     </div>
   );
