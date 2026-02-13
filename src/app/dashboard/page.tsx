@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import GoalForm from "@/components/GoalForm";
 import GoalList from "@/components/GoalList";
 import { useRouter } from "next/navigation";
@@ -11,24 +13,27 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) router.push('/');
+    if (!loading && !user) router.push("/");
   }, [user, loading, router]);
 
   if (loading) return <div>로딩 중...</div>;
 
   return (
-    <div className="min-h-screen p-8">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-300">{user?.displayName}님의 대시보드</h1>
-        <button onClick={logout} className="text-sm text-red-500 underline">로그아웃</button>
-      </header>
-      
-      <div className="max-w-md mx-auto">
-        <GoalForm onComplete={() => alert('목표가 저장되었습니다!')} />
-        <GoalList />
+    <div className="min-h-screen">
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto w-full px-6">
+          <Header />
+        </div>
+
+        <main className="flex-1 w-full max-w-4xl mx-auto px-6 pb-4">
+          <div className="max-w-md mx-auto">
+            <GoalForm onComplete={() => alert("목표가 저장되었습니다!")} />
+            <GoalList />
+          </div>
+        </main>
       </div>
-      
-      {/* 여기에 나중에 저장된 목표 리스트와 API 매칭 결과를 보여줄 것입니다 */}
+
+      <Footer />
     </div>
   );
 }
